@@ -1,0 +1,9 @@
+[package]
+edition = "2021"
+name = "eguitest"
+version = "0.1.0"
+
+[dependencies]
+eframe = "0.28.1"
+egui = "0.28.1"
+rand = "0.8.5"
