@@ -1,5 +1,4 @@
 use std::io;
-use std::num::ParseIntError;
 
 enum Operation {
     Add,
@@ -9,46 +8,57 @@ enum Operation {
 }
 
 struct Expression {
-    left: i32,
+    left: f64,
     operation: Operation,
-    right: i32,
+    right: f64,
 }
 
 fn parse_experession(input: &str) -> Result<Expression, String> {
-    let parts: Vec<&str> = input.split_whitespace().collect();
-    if parts.len() != 3 {
-        return Err("输入格式错误：操作数 操作符 操作数".to_string());
+    let mut operator_ops = None;
+    let operators = ['+', '-', '*', '/'];
+
+    for (i, ch) in input.chars().enumerate() {
+        if operators.contains(&ch) {
+            operator_ops = Some((i, ch));
+            break;
+        }
     }
 
-    let left = parts[0]
-        .parse::<i32>()
-        .map_err(|_| "无法解析左操作数".to_string())?;
-    let right = parts[2]
-        .parse::<i32>()
-        .map_err(|_| "无法解析右操作数".to_string())?;
+    if let Some((pos, op_char)) = operator_ops {
+        let left = &input[0..pos];
+        let right = &input[pos + 1..];
 
-    let operation = match parts[1] {
-        "+" => Operation::Add,
-        "-" => Operation::Subtract,
-        "*" => Operation::Multiply,
-        "/" => Operation::Divide,
-        _ => return Err("无效的操作符".to_string()),
-    };
+        let left = left
+            .parse::<f64>()
+            .map_err(|_| "无法解析左操作数".to_string())?;
+        let right = right
+            .parse::<f64>()
+            .map_err(|_| "无法解析右操作数".to_string())?;
 
-    Ok(Expression {
-        left,
-        operation,
-        right,
-    })
+        let operation = match op_char {
+            '+' => Operation::Add,
+            '-' => Operation::Subtract,
+            '*' => Operation::Multiply,
+            '/' => Operation::Divide,
+            _ => return Err("无效的操作符".to_string()),
+        };
+
+        Ok(Expression {
+            left,
+            operation,
+            right,
+        })
+    } else {
+        Err("无效的表达式".to_string())
+    }
 }
-
-fn calculate(experssion: &Expression) -> Result<i32, String> {
+fn calculate(experssion: &Expression) -> Result<f64, String> {
     match experssion.operation {
         Operation::Add => Ok(experssion.left + experssion.right),
         Operation::Subtract => Ok(experssion.left - experssion.right),
         Operation::Multiply => Ok(experssion.left * experssion.right),
         Operation::Divide => {
-            if experssion.right == 0 {
+            if experssion.right == 0.0 {
                 Err("除数不能为零".to_string())
             } else {
                 Ok(experssion.left / experssion.right)
@@ -57,20 +67,25 @@ fn calculate(experssion: &Expression) -> Result<i32, String> {
     }
 }
 
+fn remove_whitespace(input: &str) -> String {
+    input.chars().filter(|c| !c.is_whitespace()).collect()
+}
+
 fn main() {
-    println!("请输入一个表达式（例如：2 + 3），按回车键计算结果。输入exit退出程序。");
+    println!("请输入表达式 (例如: 3+4)，或输入 'exit' 退出:");
 
     loop {
         let mut input = String::new();
         io::stdin().read_line(&mut input).expect("读取输入失败");
 
         let input = input.trim();
-
         if input == "exit" {
             break;
         }
 
-        match parse_experession(input) {
+        let input = remove_whitespace(input);
+
+        match parse_experession(&input) {
             Ok(experssion) => match calculate(&experssion) {
                 Ok(result) => println!("结果：{}", result),
                 Err(err) => println!("计算错误：{}", err),
